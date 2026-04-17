@@ -178,7 +178,8 @@ class tarefas(auth):
 
     def pesquisar(self, status=None, type=None, company_user=None,
                   start_date=None, end_date=None, no_owner=False,
-                  os_free=False, os_workflow=False, page=1, limit=10, **kwargs):
+                  os_free=False, os_workflow=False, page=1, limit=10,
+                  all_pages=True, **kwargs):
         """
         Pesquisa tarefas com filtros.
 
@@ -193,6 +194,7 @@ class tarefas(auth):
             os_workflow (bool): Filtro OS workflow
             page (int): Número da página (padrão: 1)
             limit (int): Quantidade de registros por página (padrão: 10)
+            all_pages (bool): Se True, busca todas as páginas automaticamente (padrão: True)
             **kwargs: Parâmetros extras enviados no body
 
         Returns:
@@ -231,9 +233,40 @@ class tarefas(auth):
             headers={"Content-Type": "application/json"},
         )
 
-        if response:
+        if not response:
+            return {}
+
+        if all_pages:
+            json_response = response.json()
+
+            if "data" not in json_response:
+                return json_response
+
+            tarefas_list = json_response["data"]
+
+            while len(json_response["data"]) == limit:
+                payload["page"] += 1
+                response2 = self.request(
+                    "POST",
+                    url=url,
+                    data=json.dumps(payload),
+                    headers={"Content-Type": "application/json"},
+                )
+
+                if response2:
+                    json_response2 = response2.json()
+                    if "data" in json_response2 and json_response2["data"]:
+                        tarefas_list.extend(json_response2["data"])
+                        json_response = json_response2
+                    else:
+                        break
+                else:
+                    break
+
+            json_response["data"] = tarefas_list
+            return json_response
+        else:
             return response.json()
-        return {}
 
     def ver(self, id_tarefa):
         """
@@ -317,7 +350,7 @@ class clientes(auth):
             return response.json()
         return {}
     
-    def pesquisar(self, active=True, page=1, limit=15, search=""):
+    def pesquisar(self, active=True, page=1, limit=15, search="", all_pages=True):
         """
         Pesquisa clientes com filtros.
 
@@ -326,6 +359,7 @@ class clientes(auth):
             page (int): Número da página (padrão: 1)
             limit (int): Quantidade de registros por página (padrão: 15)
             search (str): Termo de busca no nome do cliente
+            all_pages (bool): Se True, busca todas as páginas automaticamente (padrão: True)
 
         Returns:
             dict: Resultado da pesquisa ou dict vazio se falhou
@@ -348,6 +382,33 @@ class clientes(auth):
             params=payload,
         )
 
-        if response:
+        if not response:
+            return {}
+
+        if all_pages:
+            json_response = response.json()
+
+            if "data" not in json_response:
+                return json_response
+
+            clientes_list = json_response["data"]
+
+            while len(json_response["data"]) == limit:
+                page += 1
+                payload["page"] = page
+                response2 = self.request("GET", url=url, params=payload)
+
+                if response2:
+                    json_response2 = response2.json()
+                    if "data" in json_response2 and json_response2["data"]:
+                        clientes_list.extend(json_response2["data"])
+                        json_response = json_response2
+                    else:
+                        break
+                else:
+                    break
+
+            json_response["data"] = clientes_list
+            return json_response
+        else:
             return response.json()
-        return {}
