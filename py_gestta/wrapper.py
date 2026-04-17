@@ -345,8 +345,7 @@ class clientes(auth):
         response = self.request(
             "GET",
             url=url,
-            data=json.dumps(payload),
-            headers={"Content-Type": "application/json"},
+            params=payload,
         )
 
         if response:
