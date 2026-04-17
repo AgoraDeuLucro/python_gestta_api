@@ -342,7 +342,12 @@ class clientes(auth):
             "search": search,
         }
 
-        response = self.request("GET", url=url, params=payload)
+        response = self.request(
+            "GET",
+            url=url,
+            data=json.dumps(payload),
+            headers={"Content-Type": "application/json"},
+        )
 
         if response:
             return response.json()
