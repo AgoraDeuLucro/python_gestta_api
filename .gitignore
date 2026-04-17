@@ -1,0 +1,6 @@
+python_bling_api
+venv/
+tests/
+*test*
+*.pyc
+.directory
