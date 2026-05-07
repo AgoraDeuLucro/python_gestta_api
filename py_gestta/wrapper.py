@@ -1,5 +1,5 @@
 import json
-from time import sleep
+from time import sleep, time
 import requests
 
 
@@ -23,6 +23,8 @@ class auth:
         self.access_token = access_token
         self.base_url = base_url.rstrip("/") if base_url else "https://api.gestta.com.br"
         self.print_error = print_error
+        self._last_request_time: float = 0.0
+        self._min_interval: float = 0.3
 
     def login(self, email, password):
         """
@@ -79,6 +81,10 @@ class auth:
         max_retries = 5
         wait = 1.0
 
+        elapsed = time() - self._last_request_time
+        if elapsed < self._min_interval:
+            sleep(self._min_interval - elapsed)
+
         for attempt in range(max_retries + 1):
             match method:
                 case "GET":
@@ -95,6 +101,8 @@ class auth:
                     response = requests.options(url=url, params=req_params, headers=req_headers)
                 case _:
                     raise ValueError(f"Método HTTP inválido: {method}")
+
+            self._last_request_time = time()
 
             if response.status_code in (200, 201):
                 return response
